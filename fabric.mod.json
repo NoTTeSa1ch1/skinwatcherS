@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "skinwatch",
+  "version": "${version}",
+  "name": "SkinWatch",
+  "description": "Ищет в TAB запрещённые скины и пишет ник игрока в чат.",
+  "environment": "client",
+  "entrypoints": { "client": [ "ru.skinwatch.SkinWatchClient" ] },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
