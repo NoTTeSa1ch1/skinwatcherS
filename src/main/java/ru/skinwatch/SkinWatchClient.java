@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -38,16 +39,30 @@ public class SkinWatchClient implements ClientModInitializer {
     /** Как часто проверять TAB (тики, 20 = раз в секунду). */
     private static final int CHECK_INTERVAL = 20;
 
-    /** Эталонное лицо 8x8 (RGB), взято с твоей картинки. */
-    private static final int[] REF = {
-        0x000000, 0x000000, 0x141313, 0x000000, 0x000000, 0x141313, 0x000000, 0x131313,
-        0xD4AA7B, 0xD4AA7B, 0xD4AA7B, 0xD4AA7B, 0x000000, 0x000000, 0x131313, 0x000000,
-        0xD4AA7C, 0xB68859, 0xB68859, 0xD4AA7C, 0xD4AA7D, 0xB68859, 0x000000, 0x000000,
-        0xD4AA7C, 0xE5E6E5, 0x151414, 0xD4AA7D, 0xD4AA7D, 0x141313, 0xE5E6E5, 0x000000,
-        0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D,
-        0xD4AA7C, 0xD4AA7D, 0xD4AA7D, 0x000000, 0x000000, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D,
-        0xD4AA7C, 0xD4AA7D, 0xD4AA7D, 0xB68859, 0xB68859, 0xD4AA7C, 0xD4AA7D, 0xD4AA7D,
-        0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D
+    /** Эталонные лица 8x8 (RGB) запрещённых скинов. Совпадение с любым из них = нарушение. */
+    private static final int[][] REFS = {
+        // скин 1: чёрные волосы, усики
+        {
+            0x000000, 0x000000, 0x141313, 0x000000, 0x000000, 0x141313, 0x000000, 0x131313,
+            0xD4AA7B, 0xD4AA7B, 0xD4AA7B, 0xD4AA7B, 0x000000, 0x000000, 0x131313, 0x000000,
+            0xD4AA7C, 0xB68859, 0xB68859, 0xD4AA7C, 0xD4AA7D, 0xB68859, 0x000000, 0x000000,
+            0xD4AA7C, 0xE5E6E5, 0x151414, 0xD4AA7D, 0xD4AA7D, 0x141313, 0xE5E6E5, 0x000000,
+            0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D,
+            0xD4AA7C, 0xD4AA7D, 0xD4AA7D, 0x000000, 0x000000, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D,
+            0xD4AA7C, 0xD4AA7D, 0xD4AA7D, 0xB68859, 0xB68859, 0xD4AA7C, 0xD4AA7D, 0xD4AA7D,
+            0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D, 0xD4AA7D
+        },
+        // скин 2: фуражка
+        {
+            0x3E260A, 0x3E260A, 0x42403F, 0x42403F, 0x42403F, 0x42403F, 0x3E260A, 0x3E260A,
+            0x643D10, 0x643D10, 0x643D10, 0x5B5958, 0x5B5958, 0x643D10, 0x643D10, 0x643D10,
+            0x080707, 0x080707, 0x080707, 0x080707, 0x080707, 0x080707, 0x080707, 0x080707,
+            0xCD9B65, 0xE5E6E5, 0x151414, 0xCD9B65, 0xCD9B65, 0x151414, 0xE5E6E5, 0xCD9B65,
+            0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65,
+            0xCD9B65, 0xCD9B65, 0xCD9B65, 0x0A0A0A, 0x0A0A0A, 0xCD9B65, 0xCD9B65, 0xCD9B65,
+            0xCD9B65, 0xCD9B65, 0xCD9B65, 0x8D6B46, 0x8D6B46, 0xCD9B65, 0xCD9B65, 0xCD9B65,
+            0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65, 0xCD9B65
+        }
     };
 
     private static final String ABSENT = "";
@@ -99,7 +114,7 @@ public class SkinWatchClient implements ClientModInitializer {
                 if (SEND_TO_PUBLIC_CHAT) {
                     mc.getNetworkHandler().sendChatMessage(msg);
                 } else {
-                    mc.player.sendMessage(Text.literal("[SkinWatch] " + msg), false);
+                    mc.player.sendMessage(Text.literal("[SkinWatch] " + msg).formatted(Formatting.RED, Formatting.BOLD), false);
                 }
             }
         }
@@ -123,25 +138,31 @@ public class SkinWatchClient implements ClientModInitializer {
         }
     }
 
-    /** Сравнивает лицо (база + слой шляпы) с эталоном. Поддерживает HD-скины (128x128 и т.д.). */
+    /** Проверяет лицо скина (база + слой шляпы) на совпадение с любым эталоном. Поддерживает HD-скины. */
     private static boolean matches(BufferedImage img) {
         int s = Math.max(1, img.getWidth() / 64);
         if (img.getWidth() < 64 || img.getHeight() < 32 * s) return false;
 
-        int matched = 0;
+        int[] face = new int[64];
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
                 int base = img.getRGB((8 + x) * s + s / 2, (8 + y) * s + s / 2);
                 int hat  = img.getRGB((40 + x) * s + s / 2, (8 + y) * s + s / 2);
-                int c = ((hat >>> 24) & 0xFF) > 127 ? hat : base; // как в TAB: непрозрачный второй слой рисуется поверх
-
-                int ref = REF[y * 8 + x];
-                if (Math.abs(((c >> 16) & 0xFF) - ((ref >> 16) & 0xFF)) <= COLOR_TOLERANCE
-                 && Math.abs(((c >> 8) & 0xFF) - ((ref >> 8) & 0xFF)) <= COLOR_TOLERANCE
-                 && Math.abs((c & 0xFF) - (ref & 0xFF)) <= COLOR_TOLERANCE) matched++;
+                face[y * 8 + x] = ((hat >>> 24) & 0xFF) > 127 ? hat : base; // как в TAB: непрозрачный второй слой рисуется поверх
             }
         }
-        return matched >= MIN_MATCHED;
+
+        for (int[] ref : REFS) {
+            int matched = 0;
+            for (int i = 0; i < 64; i++) {
+                int c = face[i], r = ref[i];
+                if (Math.abs(((c >> 16) & 0xFF) - ((r >> 16) & 0xFF)) <= COLOR_TOLERANCE
+                 && Math.abs(((c >> 8) & 0xFF) - ((r >> 8) & 0xFF)) <= COLOR_TOLERANCE
+                 && Math.abs((c & 0xFF) - (r & 0xFF)) <= COLOR_TOLERANCE) matched++;
+            }
+            if (matched >= MIN_MATCHED) return true;
+        }
+        return false;
     }
 
     // ---- работа с GameProfile через рефлексию (в 1.21.9+ он стал record, имена методов менялись) ----
